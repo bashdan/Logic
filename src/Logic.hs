@@ -17,7 +17,6 @@ type Variable = String
 -- contexts in which the Term is used.
 data Term = Atm Atom | 
             Var Variable | 
-            Str String | 
             Comp String [Term] |
             ETerm -- "Extra" or "Error" Term
 
@@ -38,7 +37,6 @@ newtype Stack = Stck [Rule]
 instance Show Term where
     show (Atm a)           = a
     show (Var v)           = v
-    show (Str s)           = s
     show (Comp s l@(t:ts)) = s ++ "(" ++ intercalate ", " (map show l) ++ ")"
     show ETerm             = "error term"
 
@@ -209,7 +207,6 @@ termcomment = do t <- simpleTerm; token comment; return t
 vars :: Term -> [Term]
 vars (Atm _)     = []
 vars (Var v)     = [Var v]
-vars (Str _)     = []
 vars (Comp _ ts) = concatMap vars ts
 -- vars (Subs s) = (map fst s) ++ ((map snd s) >>= vars)
 

@@ -6,6 +6,7 @@ import Logic
 import Substitution
 import Parser
 import Prover
+import Printer
 import Debug.Trace (trace)
 import Prelude
 import Data.List (nub, find)
@@ -15,7 +16,6 @@ import Data.List (nub, find)
 -- Main for reading file as argument
 main :: IO ()
 main = do args <- getArgs
-          let flags = filter (("--" ==) . take 2) args
           let files = filter (("--" /=) . take 2) args
           fileContents <- mapM readFile files
           setup (concat fileContents)
@@ -28,19 +28,14 @@ setup input = do let rules = [ r | ((r, ""):_) <- parseType ruleF input ]
                  interpreter stack [] "Setup finished. Running interpreter"
     where parseType f i = map (runParser f) $ lines i
 
-
 -- Solve one query (list of predicates)
 answer :: Stack -> [Term] -> IO ()
 answer st qs = do let as = nub $ solve st qs
-                  case as of
-                     [] -> putStrLn "No."
-                     _  -> if null $ concatMap vars qs 
-                                then putStrLn "Yes." -- If there are no vars to convey
-                                else do putStrLn "Yes:"
-                                        mapM_ printSln as
-    where printSln (Soln (Subs ss)) = 
-            mapM_ (\(v, t) -> putStrLn (show v ++ " = " ++ show t)) $ 
-                  ans (nub' ss) (unionVars qs)
+                  if null as then putStrLn "No"
+                             else putStrLn "Yes"
+                  if null $ concatMap vars qs then putStr "" -- If there are no vars to convey
+                                              else mapM_ printSln as
+    where printSln (Soln (Subs ss)) = mapM_ (\(v, t) -> putStrLn (show v ++ " = " ++ show t)) $ ans (nub' ss) (unionVars qs)
 
 interpreter :: Stack -> [Term] -> String -> IO ()
 interpreter st qs s = do putStrLn s
@@ -68,7 +63,7 @@ curSub vts (Var a) = if subToDo vts (Var a) then curSub vts (nextSub vts (Var a)
                                             else head $ filter (\(Var v, _) -> a == v) vts
     where subToDo :: [(Term, Term)] -> Term -> Bool
           subToDo [] _ = False
-          subToDo ((Var x, Var _):m) (Var a) = a == x || subToDo m (Var a)
+          subToDo ((Var x, Var y):m) (Var a) = (a == x) || subToDo m (Var a)
           subToDo ((Var _, _):m) a = subToDo m a
           nextSub :: [(Term, Term)] -> Term -> Term
           nextSub [] a = a
@@ -98,18 +93,15 @@ instance Show Action where
     show (Query cs)         = show cs
     show (ADebug s)         = s
 
-ncParser :: Parser a -> Parser a
-ncParser p = (do x <- p; token spaces; comment; return x) </>
-             (do x <- p; token spaces; return x) </>
-             (do p)
-
 ruleF :: Parser Rule
-ruleF = ncParser rule'
-    where rule' = do r <- rule; char '.'; return r
+ruleF = (do r <- rule; char '.'; token spaces; comment; return r) </>
+        (do r <- rule; char '.'; token spaces; return r) </>
+        (do r <- rule; char '.'; return r)
 
 queryF :: Parser [Term]
-queryF = ncParser query'
-    where query' = do qs <- complist; char '?'; return qs
+queryF = (do qs <- complist; char '?'; token spaces; comment; return qs) </>
+         (do qs <- complist; char '?'; token spaces; return qs) </>
+         (do qs <- complist; char '?'; return qs)
 
 action' :: String -> Parser Action
 action' s = do token (string s); return (ADebug s)

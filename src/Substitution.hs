@@ -29,7 +29,7 @@ doSingleSub s@(Var v,t) (Comp n ts) = Comp n (map (doSingleSub s) ts)
 -- Applying a Substition to a term to give another term. The Apply list function makes it so it can map two of the terms together.
 dosub :: [(Term, Term)] -> [Term] -> [Term]
 dosub [] tl = tl
-dosub [sub] tL = map (doSingleSub sub) tL
+dosub (sub : []) tL = map (doSingleSub sub) tL
 dosub (sub1 : s) tL = dosub s (map (doSingleSub sub1) tL)
 
 compo :: Maybe [(Term, Term)] -> Maybe [(Term, Term)] -> Maybe [(Term, Term)]
@@ -64,7 +64,7 @@ unify a b
   | otherwise = Just(Subs(fromJust(unify' a b)))
 unify' :: Term -> Term -> Maybe [(Term, Term)]
 unify' (Atm a) (Atm b) = if a == b then Just nulls else Nothing
-unify' (Str a) (Str b) = if a == b then Just nulls else Nothing
+
 unify' (Var a) (Var b) = if a /= b then Just [(Var a,Var b)] else Just nulls
 unify' (Var x) t2 = Just ([(Var x, t2) | Var x `notElem` vars t2])
 unify' t1 (Var y) = Just ([(Var y, t1) | Var y `notElem` vars t1])
