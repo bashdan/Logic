@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 
 name:                Logic
-version:             0.1.0.1
+version:             0.1.0.2
 -- synopsis:
 -- description:
 -- bug-reports:
@@ -14,7 +14,7 @@ build-type:          Simple
 
 executable logic
   main-is:             Main.hs
-  other-modules:       Parser, Printer, Logic, Substitution, Prover
+  other-modules:       Parser, Logic, Substitution, Prover
   -- other-extensions:
   build-depends:       base >=4.9 && <4.15
 
