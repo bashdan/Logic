@@ -8,7 +8,7 @@ import Parser
 import Prover
 import Debug.Trace (trace)
 import Prelude
-import Data.List (nub, find)
+import Data.List (nub, find, intercalate)
 
 --------------------------------------------------------------------------------
 
@@ -24,20 +24,22 @@ setup input = do let rules = [ r | ((r, ""):_) <- parseType ruleF input ]
                      queries = [ q | ((q, ""):_) <- parseType queryF input ]
                      stack = foldl addStack emptyStack rules
                  mapM_ (answer stack) queries
-                 interpreter stack [] "Setup finished. Running interpreter"
+                 if input == "" then interpreter stack [] "Setup finished. Running interpreter"
+                 else do files <- getArgs
+                         interpreter stack [] ("Finished reading \n" ++ intercalate "\n" (map show files) ++ "\nRunning interpreter")
     where parseType f i = map (runParser f) $ lines i
 
 -- Solve one query (list of predicates)
 answer :: Stack -> [Term] -> IO ()
 answer st qs = do let as = nub $ solve st qs
-                  if null as then putStr "No"
-                             else putStr "Yes"
+                  if null as then putStrLn "No"
+                             else putStrLn "Yes"
                   if null $ concatMap vars qs then putStr "" -- If there are no vars to convey
                                               else mapM_ printSln as
     where printSln (Soln (Subs ss)) = 
             let ansLst = ans (nub' ss) (unionVars qs) in 
                 case ansLst of
-                    [a] -> putStr $ "\n" ++ show (fst a) ++ " = " ++ show (snd a)
+                    [a] -> putStrLn $ show (fst a) ++ " = " ++ show (snd a)
                     _   -> mapM_ (\(v, t) -> putStrLn (show v ++ " = " ++ show t)) ansLst
 
 interpreter :: Stack -> [Term] -> String -> IO ()
@@ -117,12 +119,18 @@ clAction = (do action' "listing") </>
 doAction :: Stack -> [Term] -> String -> IO ()
 doAction st qs s = case s of
     "quit" -> putStrLn "quitting"
-    "listing" -> interpreter st qs (show st)
+    "listing" -> listing st qs
     "qs" -> interpreter st qs (show qs)
     "restart" -> interpreter (Stck []) [] "Restarted interpreter"
     "answer" -> do answer st qs
                    interpreter st [] ""
     _ -> interpreter st qs ("Not implemented " ++ s)
+
+listing :: Stack -> [Term] -> IO ()
+listing (Stck []) qs = interpreter emptyStack qs "Empty Database"
+listing (Stck rs) qs = do putStr "\n"
+                          mapM_ (\r -> putStrLn (show r ++ ".")) rs
+                          interpreter (Stck rs) qs ""
 
 actionReduce :: Parser Action
 actionReduce = do a <- action
