@@ -57,7 +57,6 @@ subcomp a b = fromJust (Just a `compo` Just b)
 
 renameVar :: Int -> Term -> Term
 renameVar _ (Atm a)     = Atm a
-renameVar _ (Str s)     = Str s
 renameVar n (Var s)     = Var (s ++ "$" ++ show n)
 renameVar n (Comp s ts) = Comp s $ map (renameVar n) ts
 
