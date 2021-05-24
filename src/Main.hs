@@ -30,11 +30,15 @@ setup input = do let rules = [ r | ((r, ""):_) <- parseType ruleF input ]
 -- Solve one query (list of predicates)
 answer :: Stack -> [Term] -> IO ()
 answer st qs = do let as = nub $ solve st qs
-                  if null as then putStrLn "No"
-                             else putStrLn "Yes"
+                  if null as then putStr "No"
+                             else putStr "Yes"
                   if null $ concatMap vars qs then putStr "" -- If there are no vars to convey
                                               else mapM_ printSln as
-    where printSln (Soln (Subs ss)) = mapM_ (\(v, t) -> putStrLn (show v ++ " = " ++ show t)) $ ans (nub' ss) (unionVars qs)
+    where printSln (Soln (Subs ss)) = 
+            let ansLst = ans (nub' ss) (unionVars qs) in 
+                case ansLst of
+                    [a] -> putStr $ "\n" ++ show (fst a) ++ " = " ++ show (snd a)
+                    _   -> mapM_ (\(v, t) -> putStrLn (show v ++ " = " ++ show t)) ansLst
 
 interpreter :: Stack -> [Term] -> String -> IO ()
 interpreter st qs s = do putStrLn s
@@ -112,6 +116,7 @@ clAction = (do action' "listing") </>
 
 doAction :: Stack -> [Term] -> String -> IO ()
 doAction st qs s = case s of
+    "quit" -> putStrLn "quitting"
     "listing" -> interpreter st qs (show st)
     "qs" -> interpreter st qs (show qs)
     "restart" -> interpreter (Stck []) [] "Restarted interpreter"
