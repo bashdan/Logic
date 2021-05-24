@@ -6,7 +6,6 @@ import Logic
 import Substitution
 import Parser
 import Prover
-import Printer
 import Debug.Trace (trace)
 import Prelude
 import Data.List (nub, find)
