@@ -46,7 +46,7 @@ instance Show Rule where
 
 instance Show Stack where
     show (Stck [])         = "empty stack"
-    show (Stck rs)         = show $ intercalate ", " (map show rs)
+    show (Stck rs)         = show $ intercalate ".\n" (map show rs)
 
 --------------------------------------------------------------------------------
 
